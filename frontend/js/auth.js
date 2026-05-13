@@ -6,7 +6,7 @@
 
 // The base URL of the backend API
 // API URL — uses the same server that serves the frontend
-const API_URL = `${window.location.protocol}//${window.location.hostname}:3000/api`;
+const API_URL = 'https://splitsync-backend-miwy.onrender.com/api';
 
 // ── Save the token after login ──
 // Stores the token in localStorage so it persists
