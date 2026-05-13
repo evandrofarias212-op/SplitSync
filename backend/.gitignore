@@ -1,0 +1,5 @@
+# Ignore the node_modules folder (very heavy, no need to upload)
+node_modules/
+
+# Ignore the .env file (contains secret keys!)
+.env

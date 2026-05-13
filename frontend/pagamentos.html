@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Pagamentos — SplitSync</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    .filters {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+
+    .filter-btn {
+      padding: 7px 16px;
+      border-radius: 99px;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      color: var(--text-secondary);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-family: var(--font-body);
+    }
+
+    .filter-btn:hover { border-color: var(--accent); color: var(--text-primary); }
+    .filter-btn.active { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); }
+
+    .payment-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      transition: all 0.2s ease;
+      margin-bottom: 12px;
+    }
+
+    .payment-card:hover { border-color: rgba(108,99,255,0.2); }
+
+    .payment-left { display: flex; align-items: center; gap: 14px; flex: 1; }
+
+    .payment-avatar {
+      width: 42px;
+      height: 42px;
+      background: var(--accent-soft);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: 16px;
+      color: var(--accent);
+      flex-shrink: 0;
+    }
+
+    .payment-name { font-size: 15px; font-weight: 600; margin-bottom: 3px; }
+    .payment-meta { font-size: 12px; color: var(--text-secondary); }
+
+    .payment-value {
+      font-family: var(--font-display);
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--text-primary);
+      min-width: 100px;
+      text-align: right;
+    }
+
+    .payment-actions { display: flex; gap: 8px; align-items: center; }
+
+    .receipt-link {
+      font-size: 12px;
+      color: var(--accent);
+      text-decoration: none;
+      padding: 5px 10px;
+      border: 1px solid rgba(108,99,255,0.3);
+      border-radius: var(--radius-sm);
+      transition: all 0.2s;
+    }
+
+    .receipt-link:hover { background: var(--accent-soft); }
+
+    .search-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .search-input-wrap {
+      position: relative;
+      flex: 1;
+      max-width: 360px;
+    }
+
+    .search-input-wrap svg {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-secondary);
+      pointer-events: none;
+    }
+
+    .search-input-wrap input {
+      padding-left: 38px;
+      height: 38px;
+      font-size: 13px;
+    }
+
+    .results-count {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-left: auto;
+    }
+
+    /* Confirm modal */
+    .upload-area {
+      border: 2px dashed var(--border);
+      border-radius: var(--radius-sm);
+      padding: 32px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .upload-area:hover { border-color: var(--accent); background: var(--accent-soft); }
+    .upload-area input { display: none; }
+    .upload-area p { font-size: 14px; color: var(--text-secondary); margin-top: 8px; }
+    .upload-area .upload-icon { font-size: 32px; }
+    .upload-filename { font-size: 13px; color: var(--success); margin-top: 8px; font-weight: 500; }
+  </style>
+</head>
+<body>
+
+<div class="layout">
+
+  <!-- ── Sidebar ── -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">Split<span>Sync</span></div>
+    <nav class="sidebar-nav">
+      <a href="dashboard.html" class="nav-item">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+        Dashboard
+      </a>
+      <a href="grupos.html" class="nav-item">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        Grupos
+      </a>
+      <a href="pagamentos.html" class="nav-item active">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+        Pagamentos
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <button class="nav-item" onclick="logout()">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+        Sair
+      </button>
+    </div>
+  </aside>
+
+  <!-- ── Main Content ── -->
+  <main class="main-content">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Pagamentos</div>
+        <div class="page-subtitle">Gerencie os comprovantes e confirme pagamentos</div>
+      </div>
+    </div>
+
+    <!-- Search bar -->
+    <div class="search-bar">
+      <div class="search-input-wrap">
+        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0"/>
+        </svg>
+        <input type="text" id="search-input" placeholder="Buscar por nome ou grupo..." oninput="applyFilters()" />
+      </div>
+      <span class="results-count" id="results-count"></span>
+    </div>
+
+    <!-- Filters -->
+    <div class="filters">
+      <button class="filter-btn active" data-filter="all" onclick="setFilter('all', this)">Todos</button>
+      <button class="filter-btn" data-filter="pending" onclick="setFilter('pending', this)">⏳ Pendentes</button>
+      <button class="filter-btn" data-filter="confirmed" onclick="setFilter('confirmed', this)">✅ Confirmados</button>
+      <button class="filter-btn" data-filter="rejected" onclick="setFilter('rejected', this)">❌ Rejeitados</button>
+    </div>
+
+    <!-- Payments list -->
+    <div id="payments-container">
+      <div class="loading"><div class="spinner"></div> Carregando pagamentos...</div>
+    </div>
+  </main>
+</div>
+
+<!-- ── Confirm Payment Modal ── -->
+<div class="modal-overlay" id="confirm-modal">
+  <div class="modal" style="max-width:560px;">
+    <div class="modal-header">
+      <div class="modal-title">Gerar Nota Fiscal</div>
+      <button class="modal-close" onclick="closeConfirmModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13px; color:var(--text-secondary); margin-bottom:4px;">
+        Pagamento de <strong id="confirm-member-name" style="color:var(--text-primary);"></strong>
+      </p>
+
+      <div style="font-size:11px; font-weight:700; color:var(--accent); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:8px; margin-top:12px;">Dados da Empresa</div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+        <div class="input-group">
+          <label>Nome da Empresa</label>
+          <input type="text" id="company-name" placeholder="Ex: Empresa LTDA" />
+        </div>
+        <div class="input-group">
+          <label>CNPJ / CPF</label>
+          <input type="text" id="company-cnpj" placeholder="00.000.000/0001-00" />
+        </div>
+      </div>
+
+      <div style="font-size:11px; font-weight:700; color:var(--accent); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:8px; margin-top:16px;">
+        Itens / Serviços
+        <button onclick="addItem()" style="margin-left:8px; background:var(--accent-soft); color:var(--accent); border:none; border-radius:4px; padding:3px 10px; font-size:11px; cursor:pointer;">+ Adicionar</button>
+      </div>
+      <div id="items-container" style="display:flex; flex-direction:column; gap:10px;"></div>
+
+      <div style="font-size:11px; font-weight:700; color:var(--accent); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:8px; margin-top:16px;">Parcelamento</div>
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+        <input type="checkbox" id="is-installment" onchange="toggleInstallment()" style="width:auto;" />
+        <label style="font-size:13px; color:var(--text-primary); cursor:pointer;" for="is-installment">Este pagamento é parcelado</label>
+      </div>
+      <div id="installment-info-field" style="display:none;">
+        <div class="input-group">
+          <label>Detalhes do Parcelamento</label>
+          <input type="text" id="installment-info" placeholder="Ex: 3x de R$ 50,00" />
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeConfirmModal()">Cancelar</button>
+      <button class="btn btn-success" onclick="confirmPayment()">🧾 Gerar e Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast-container" id="toast-container"></div>
+
+<script src="js/auth.js"></script>
+<script>
+  requireAuth();
+
+  // Store all payments for filtering
+  let allPayments = [];
+  let currentPaymentId = null;
+  // ── Item counter for the invoice ──
+  let itemCount = 0;
+
+  document.addEventListener('DOMContentLoaded', loadPayments);
+
+  // ── Load all payments ──
+  async function loadPayments() {
+    const container = document.getElementById('payments-container');
+    try {
+      const res = await fetch(`${API_URL}/payments`, { headers: authHeaders() });
+      allPayments = await res.json();
+      renderPayments(allPayments);
+    } catch {
+      container.innerHTML = `<div class="empty-state"><p>Erro ao carregar pagamentos.</p></div>`;
+    }
+  }
+
+  // ── Render payments list ──
+  function renderPayments(payments) {
+    const container = document.getElementById('payments-container');
+
+    if (payments.length === 0) {
+      container.innerHTML = `
+        <div class="empty-state">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+          <p>Nenhum pagamento encontrado.</p>
+        </div>`;
+      return;
+    }
+
+    const statusLabel = { pending: 'Pendente', confirmed: 'Confirmado', rejected: 'Rejeitado' };
+
+    container.innerHTML = payments.map(p => `
+      <div class="payment-card">
+        <div class="payment-left">
+          <div class="payment-avatar">${p.members?.name?.charAt(0).toUpperCase() || '?'}</div>
+          <div>
+            <div class="payment-name">${p.members?.name || 'Desconhecido'}</div>
+            <div class="payment-meta">
+              📁 ${p.members?.groups?.name || '—'} •
+              📅 Venc: ${formatDate(p.members?.due_date)} •
+              📱 ${p.members?.phone || '—'}
+            </div>
+          </div>
+        </div>
+
+        <div class="payment-value">${formatCurrency(p.members?.individual_value || 0)}</div>
+
+        <div class="payment-actions">
+          <span class="badge badge-${p.status}">${statusLabel[p.status]}</span>
+
+          ${p.receipt_url ? `<a href="${p.receipt_url}" target="_blank" class="receipt-link">📎 Comprovante</a>` : '<span style="font-size:12px;color:var(--text-muted);">Sem comprovante</span>'}
+
+          ${p.invoice_url ? `<a href="${p.invoice_url}" target="_blank" class="receipt-link">🧾 Nota Fiscal</a>` : ''}
+
+          ${p.status === 'pending' && p.receipt_url ? `
+            <button class="btn btn-success btn-sm" onclick="openConfirmModal('${p.id}', '${p.members?.name},${p.members?.individual_value || 0}')">✅ Confirmar</button>
+            <button class="btn btn-danger btn-sm" onclick="rejectPayment('${p.id}')">❌ Rejeitar</button>
+          ` : ''}
+        </div>
+      </div>
+    `).join('');
+  }
+
+  // ── Active filter state ──
+  let activeFilter = 'all';
+
+  // ── Set status filter ──
+  function setFilter(status, btn) {
+    activeFilter = status;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    applyFilters();
+  }
+
+  // ── Apply both search + status filter ──
+  function applyFilters() {
+    const query = (document.getElementById('search-input')?.value || '').toLowerCase().trim();
+
+    let filtered = activeFilter === 'all'
+      ? allPayments
+      : allPayments.filter(p => p.status === activeFilter);
+
+    if (query) {
+      filtered = filtered.filter(p => {
+        const name  = (p.members?.name  || '').toLowerCase();
+        const group = (p.members?.groups?.name || '').toLowerCase();
+        const phone = (p.members?.phone || '').toLowerCase();
+        return name.includes(query) || group.includes(query) || phone.includes(query);
+      });
+    }
+
+    const countEl = document.getElementById('results-count');
+    if (countEl) {
+      countEl.textContent = filtered.length === allPayments.length
+        ? ''
+        : `${filtered.length} resultado${filtered.length !== 1 ? 's' : ''}`;
+    }
+
+    renderPayments(filtered);
+  }
+
+  // Keep old name for compatibility (filter buttons used to call filterPayments)
+  function filterPayments(status, btn) { setFilter(status, btn); }
+
+ // ── Open confirm modal ──
+function openConfirmModal(paymentId, memberName, memberValue) {
+  currentPaymentId = paymentId;
+  document.getElementById('confirm-member-name').textContent = memberName;
+  document.getElementById('company-name').value = '';
+  document.getElementById('company-cnpj').value = '';
+  document.getElementById('is-installment').checked = false;
+  document.getElementById('installment-info').value = '';
+  document.getElementById('installment-info-field').style.display = 'none';
+
+  // Reset items and add one default item
+  itemCount = 0;
+  document.getElementById('items-container').innerHTML = '';
+  addItem(memberName, memberValue);
+
+  document.getElementById('confirm-modal').classList.add('open');
+}
+
+// ── Add item row to invoice ──
+function addItem(defaultDesc = '', defaultValue = '') {
+  itemCount++;
+  const container = document.getElementById('items-container');
+  const div = document.createElement('div');
+  div.id = `item-${itemCount}`;
+  div.style.cssText = 'display:grid; grid-template-columns:2fr 1fr 1fr auto; gap:8px; align-items:end;';
+  div.innerHTML = `
+    <div class="input-group">
+      <label>Descrição</label>
+      <input type="text" id="item-desc-${itemCount}" placeholder="Ex: Mensalidade Janeiro" value="${defaultDesc}" />
+    </div>
+    <div class="input-group">
+      <label>Qtd</label>
+      <input type="number" id="item-qty-${itemCount}" value="1" min="1" />
+    </div>
+    <div class="input-group">
+      <label>Valor Unit. (R$)</label>
+      <input type="number" id="item-price-${itemCount}" placeholder="0.00" step="0.01" value="${defaultValue}" />
+    </div>
+    <button onclick="removeItem(${itemCount})" style="background:var(--danger-soft); color:var(--danger); border:1px solid rgba(239,68,68,0.2); border-radius:var(--radius-sm); padding:10px; cursor:pointer; margin-bottom:0; height:40px;">🗑️</button>
+  `;
+  container.appendChild(div);
+}
+
+// ── Remove item row ──
+function removeItem(id) {
+  const el = document.getElementById(`item-${id}`);
+  if (el) el.remove();
+}
+
+// ── Toggle installment field ──
+function toggleInstallment() {
+  const checked = document.getElementById('is-installment').checked;
+  document.getElementById('installment-info-field').style.display = checked ? 'flex' : 'none';
+}
+
+// ── Close confirm modal ──
+function closeConfirmModal() {
+  document.getElementById('confirm-modal').classList.remove('open');
+  currentPaymentId = null;
+}
+
+// ── Confirm payment and generate invoice ──
+async function confirmPayment() {
+  const companyName = document.getElementById('company-name').value.trim();
+  const companyCNPJ = document.getElementById('company-cnpj').value.trim();
+  const isInstallment = document.getElementById('is-installment').checked;
+  const installmentInfo = document.getElementById('installment-info').value.trim();
+
+  if (!companyName || !companyCNPJ) {
+    showToast('Preencha o nome e CNPJ da empresa.', 'error');
+    return;
+  }
+
+  // Collect all items
+  const items = [];
+  document.querySelectorAll('[id^="item-desc-"]').forEach(el => {
+    const num = el.id.replace('item-desc-', '');
+    const desc  = document.getElementById(`item-desc-${num}`).value.trim();
+    const qty   = parseFloat(document.getElementById(`item-qty-${num}`).value) || 1;
+    const price = parseFloat(document.getElementById(`item-price-${num}`).value) || 0;
+
+    if (desc) {
+      items.push({
+        description: desc,
+        quantity:    qty,
+        unit_price:  price,
+        total_price: qty * price,
+      });
+    }
+  });
+
+  if (items.length === 0) {
+    showToast('Adicione pelo menos um item.', 'error');
+    return;
+  }
+
+  try {
+    showToast('Gerando nota fiscal...', 'info');
+
+    const res = await fetch(`${API_URL}/payments/${currentPaymentId}/confirm`, {
+      method: 'PUT',
+      headers: authHeaders(),
+      body: JSON.stringify({
+        company_name:     companyName,
+        company_cnpj:     companyCNPJ,
+        items,
+        is_installment:   isInstallment,
+        installment_info: installmentInfo,
+      }),
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+
+    showToast(`✅ Nota fiscal gerada! Nº ${data.invoice_number}`, 'success');
+    closeConfirmModal();
+    loadPayments();
+
+  } catch (err) {
+    showToast(err.message || 'Erro ao gerar nota fiscal.', 'error');
+  }
+}
+  // ── Reject payment ──
+  async function rejectPayment(id) {
+    if (!confirm('Rejeitar este pagamento?')) return;
+
+    try {
+      const res = await fetch(`${API_URL}/payments/${id}/reject`, {
+        method: 'PUT',
+        headers: authHeaders(),
+      });
+
+      if (!res.ok) throw new Error();
+      showToast('Pagamento rejeitado.', 'info');
+      loadPayments();
+    } catch {
+      showToast('Erro ao rejeitar pagamento.', 'error');
+    }
+  }
+</script>
+
+</body>
+</html>

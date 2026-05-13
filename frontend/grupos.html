@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Grupos — SplitSync</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    .groups-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: 20px;
+    }
+
+    .group-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+
+    .group-card:hover {
+      border-color: rgba(108,99,255,0.3);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow);
+    }
+
+    .group-card-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .group-icon {
+      width: 44px;
+      height: 44px;
+      background: var(--accent-soft);
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-display);
+      font-weight: 800;
+      font-size: 18px;
+      color: var(--accent);
+    }
+
+    .group-card-name {
+      font-size: 17px;
+      font-weight: 700;
+      margin-bottom: 4px;
+      letter-spacing: -0.01em;
+    }
+
+    .group-card-meta {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .group-card-footer {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 20px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+
+    .group-footer-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .group-value {
+      font-family: var(--font-display);
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--accent);
+      letter-spacing: -0.02em;
+      flex-shrink: 0;
+    }
+
+    .group-icon-actions {
+      display: flex;
+      gap: 6px;
+    }
+
+    .group-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .group-actions .btn { flex: 1; justify-content: center; }
+
+    /* Members panel (slide in) */
+    .members-panel {
+      display: none;
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: 480px;
+      height: 100vh;
+      background: var(--bg-secondary);
+      border-left: 1px solid var(--border);
+      z-index: 500;
+      overflow-y: auto;
+      animation: slideIn 0.25s ease;
+    }
+
+    .members-panel.open { display: block; }
+
+    @keyframes slideIn {
+      from { transform: translateX(100%); }
+      to   { transform: translateX(0); }
+    }
+
+    .panel-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 499;
+    }
+
+    .panel-overlay.open { display: block; }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 24px;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      background: var(--bg-secondary);
+      z-index: 1;
+    }
+
+    .panel-body { padding: 24px; }
+
+    .member-row {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      margin-bottom: 10px;
+      transition: border-color 0.15s ease;
+      overflow: hidden;
+    }
+
+    .member-row:hover { border-color: rgba(108,99,255,0.3); }
+
+    /* Top section: avatar + name + status badge */
+    .member-top {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px 10px;
+    }
+
+    .member-avatar {
+      width: 38px;
+      height: 38px;
+      background: var(--accent-soft);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 14px;
+      color: var(--accent);
+      flex-shrink: 0;
+    }
+
+    .member-identity { flex: 1; min-width: 0; }
+    .member-name { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .member-phone { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+
+    .member-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 99px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .member-status.paid     { background: rgba(34,197,94,0.12);  color: #22c55e; border: 1px solid rgba(34,197,94,0.25);  }
+    .member-status.pending  { background: rgba(234,179,8,0.12);  color: #ca8a04; border: 1px solid rgba(234,179,8,0.25);  }
+    .member-status.rejected { background: rgba(239,68,68,0.12);  color: #ef4444; border: 1px solid rgba(239,68,68,0.25);  }
+    .member-status.none     { background: rgba(148,163,184,0.1); color: var(--text-secondary); border: 1px solid var(--border); }
+
+    /* Bottom section: due date + value + actions */
+    .member-bottom {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 16px 12px 66px;  /* 66px = avatar width + gap */
+      gap: 10px;
+    }
+
+    .member-due {
+      font-size: 11px;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .member-value {
+      font-family: var(--font-display);
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--success);
+      margin-left: auto;
+      margin-right: 8px;
+    }
+
+    .member-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .btn-send-link {
+      font-size: 11px;
+      padding: 5px 10px;
+      height: auto;
+      line-height: 1;
+      white-space: nowrap;
+    }
+
+    /* Add member form inside panel */
+    .add-member-form {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="layout">
+
+  <!-- ── Sidebar ── -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">Split<span>Sync</span></div>
+    <nav class="sidebar-nav">
+      <a href="dashboard.html" class="nav-item">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+        Dashboard
+      </a>
+      <a href="grupos.html" class="nav-item active">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        Grupos
+      </a>
+      <a href="pagamentos.html" class="nav-item">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+        Pagamentos
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <button class="nav-item" onclick="logout()">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+        Sair
+      </button>
+    </div>
+  </aside>
+
+  <!-- ── Main Content ── -->
+  <main class="main-content">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Grupos</div>
+        <div class="page-subtitle">Gerencie todos os grupos de pagamento</div>
+      </div>
+      <button class="btn btn-primary" onclick="openCreateModal()">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" width="16" height="16"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+        Novo Grupo
+      </button>
+    </div>
+
+    <!-- Groups Grid -->
+    <div id="groups-container">
+      <div class="loading"><div class="spinner"></div> Carregando grupos...</div>
+    </div>
+  </main>
+</div>
+
+<!-- ── Create/Edit Group Modal ── -->
+<div class="modal-overlay" id="group-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title" id="modal-title">Novo Grupo</div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="group-id" />
+      <div class="input-group">
+        <label>Nome do Grupo</label>
+        <input type="text" id="group-name" placeholder="Ex: Grupo Janeiro" />
+      </div>
+      <div class="input-group">
+        <label>Tipo do Grupo</label>
+        <select id="group-type" onchange="toggleValueField()">
+          <option value="1">Tipo 1 — Valor dividido igualmente</option>
+          <option value="2">Tipo 2 — Valor individual por pessoa</option>
+        </select>
+      </div>
+      <div class="input-group" id="total-value-field">
+        <label>Valor Total (R$)</label>
+        <input type="number" id="group-value" placeholder="Ex: 300.00" step="0.01" min="0" />
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveGroup()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Members Panel ── -->
+<div class="panel-overlay" id="panel-overlay" onclick="closePanel()"></div>
+<div class="members-panel" id="members-panel">
+  <div class="panel-header">
+    <div>
+      <div class="modal-title" id="panel-group-name">Membros</div>
+      <div class="text-sm text-muted" id="panel-group-type"></div>
+    </div>
+    <button class="modal-close" onclick="closePanel()">✕</button>
+  </div>
+  <div class="panel-body">
+
+    <!-- Add member form -->
+    <div class="add-member-form">
+      <div style="font-size:13px; font-weight:600; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.05em;">
+        Adicionar Membro
+      </div>
+      <div class="form-row">
+        <div class="input-group">
+          <label>Nome</label>
+          <input type="text" id="member-name" placeholder="Nome completo" />
+        </div>
+        <div class="input-group">
+          <label>WhatsApp</label>
+          <input type="text" id="member-phone" placeholder="5511999999999" />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="input-group" id="member-value-field">
+          <label>Valor (R$)</label>
+          <input type="number" id="member-value" placeholder="0.00" step="0.01" />
+        </div>
+        <div class="input-group">
+          <label>Vencimento</label>
+          <input type="date" id="member-due" />
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="addMember()" style="align-self:flex-end;">
+        Adicionar
+      </button>
+    </div>
+
+    <!-- Members list -->
+    <div style="font-size:12px; font-weight:600; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:12px;">
+      Membros do Grupo
+    </div>
+    <div id="members-list">
+      <div class="loading"><div class="spinner"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast-container" id="toast-container"></div>
+
+<script src="js/auth.js"></script>
+<script>
+  requireAuth();
+
+  // Current group being viewed in the panel
+  let currentGroup = null;
+
+  // Load groups on page load
+  document.addEventListener('DOMContentLoaded', loadGroups);
+
+  // ── Load all groups ──
+  async function loadGroups() {
+    const container = document.getElementById('groups-container');
+    try {
+      const res = await fetch(`${API_URL}/groups`, { headers: authHeaders() });
+      const groups = await res.json();
+
+      if (groups.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            <p>Nenhum grupo criado ainda.<br>Clique em "Novo Grupo" para começar.</p>
+          </div>`;
+        return;
+      }
+
+      container.innerHTML = `<div class="groups-grid">${groups.map(groupCard).join('')}</div>`;
+    } catch (err) {
+      container.innerHTML = `<div class="empty-state"><p>Erro ao carregar grupos.</p></div>`;
+    }
+  }
+
+  // ── Render a group card ──
+  function groupCard(group) {
+    const typeLabel = group.type === 1 ? 'Valor dividido igualmente' : 'Valor individual';
+    return `
+      <div class="group-card">
+        <div class="group-card-header">
+          <div class="group-icon">${group.name.charAt(0).toUpperCase()}</div>
+          <span class="badge badge-type${group.type}">Tipo ${group.type}</span>
+        </div>
+        <div class="group-card-name">${group.name}</div>
+        <div class="group-card-meta">${typeLabel}</div>
+        <div class="group-card-footer">
+          <div class="group-footer-top">
+            <div class="group-value">${formatCurrency(group.total_value)}</div>
+            <div class="group-icon-actions">
+              <button class="btn btn-secondary btn-sm" onclick="openEditModal('${group.id}', '${group.name}', ${group.type}, ${group.total_value})">
+                ✏️
+              </button>
+              <button class="btn btn-danger btn-sm" onclick="deleteGroup('${group.id}')">
+                🗑️
+              </button>
+            </div>
+          </div>
+          <div class="group-actions">
+            <button class="btn btn-secondary btn-sm" onclick="openPanel('${group.id}', '${group.name}', ${group.type})">
+              👥 Membros
+            </button>
+            <button class="btn btn-success btn-sm" onclick="sendToAll('${group.id}', '${group.name}')">
+              📱 Enviar Links
+            </button>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  // ── Open create modal ──
+  function openCreateModal() {
+    document.getElementById('modal-title').textContent = 'Novo Grupo';
+    document.getElementById('group-id').value = '';
+    document.getElementById('group-name').value = '';
+    document.getElementById('group-type').value = '1';
+    document.getElementById('group-value').value = '';
+    document.getElementById('total-value-field').style.display = 'flex';
+    document.getElementById('group-modal').classList.add('open');
+  }
+
+  // ── Open edit modal ──
+  function openEditModal(id, name, type, value) {
+    document.getElementById('modal-title').textContent = 'Editar Grupo';
+    document.getElementById('group-id').value = id;
+    document.getElementById('group-name').value = name;
+    document.getElementById('group-type').value = type;
+    document.getElementById('group-value').value = value;
+    toggleValueField();
+    document.getElementById('group-modal').classList.add('open');
+  }
+
+  // ── Hide total value field for type 2 ──
+  function toggleValueField() {
+    const type = document.getElementById('group-type').value;
+    const field = document.getElementById('total-value-field');
+    field.style.display = type === '1' ? 'flex' : 'none';
+  }
+
+  // ── Close modal ──
+  function closeModal() {
+    document.getElementById('group-modal').classList.remove('open');
+  }
+
+  // ── Save group (create or update) ──
+  async function saveGroup() {
+    const id    = document.getElementById('group-id').value;
+    const name  = document.getElementById('group-name').value.trim();
+    const type  = parseInt(document.getElementById('group-type').value);
+    const value = parseFloat(document.getElementById('group-value').value) || 0;
+
+    if (!name) { showToast('Informe o nome do grupo.', 'error'); return; }
+
+    const body = { name, type, total_value: value };
+    const isEdit = !!id;
+    const url = isEdit ? `${API_URL}/groups/${id}` : `${API_URL}/groups`;
+    const method = isEdit ? 'PUT' : 'POST';
+
+    try {
+      const res = await fetch(url, {
+        method,
+        headers: authHeaders(),
+        body: JSON.stringify(body),
+      });
+
+      if (!res.ok) throw new Error();
+
+      showToast(isEdit ? 'Grupo atualizado!' : 'Grupo criado!', 'success');
+      closeModal();
+      loadGroups();
+    } catch {
+      showToast('Erro ao salvar grupo.', 'error');
+    }
+  }
+
+  // ── Delete group ──
+  async function deleteGroup(id) {
+    if (!confirm('Tem certeza que deseja excluir este grupo? Todos os membros serão removidos.')) return;
+
+    try {
+      const res = await fetch(`${API_URL}/groups/${id}`, {
+        method: 'DELETE',
+        headers: authHeaders(),
+      });
+
+      if (!res.ok) throw new Error();
+      showToast('Grupo excluído!', 'success');
+      loadGroups();
+    } catch {
+      showToast('Erro ao excluir grupo.', 'error');
+    }
+  }
+
+  // ── Open members panel ──
+  async function openPanel(groupId, groupName, groupType) {
+    currentGroup = { id: groupId, name: groupName, type: groupType };
+
+    document.getElementById('panel-group-name').textContent = groupName;
+    document.getElementById('panel-group-type').textContent =
+      groupType === 1 ? 'Tipo 1 — Valor dividido igualmente' : 'Tipo 2 — Valor individual';
+
+    // Show or hide individual value field based on group type
+    document.getElementById('member-value-field').style.display =
+      groupType === 2 ? 'flex' : 'none';
+
+    document.getElementById('members-panel').classList.add('open');
+    document.getElementById('panel-overlay').classList.add('open');
+
+    await loadMembers();
+  }
+
+ // ── Close members panel ──
+  function closePanel() {
+    document.getElementById('members-panel').classList.remove('open');
+    document.getElementById('panel-overlay').classList.remove('open');
+    currentGroup = null;  // ← essa linha pode estar cortada
+  }
+
+  // ── Load members of current group ──
+async function loadMembers() {
+  const container = document.getElementById('members-list');
+  container.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+
+  try {
+    // Fetch members, payments and whatsapp logs in parallel
+    const [membersRes, paymentsRes, logsRes] = await Promise.all([
+      fetch(`${API_URL}/members/group/${currentGroup.id}`, { headers: authHeaders() }),
+      fetch(`${API_URL}/payments`, { headers: authHeaders() }),
+      fetch(`${API_URL}/whatsapp/logs`, { headers: authHeaders() }),
+    ]);
+
+    const members  = await membersRes.json();
+    const payments = await paymentsRes.json();
+    const logs     = await logsRes.json();
+
+    if (members.length === 0) {
+      container.innerHTML = `<div class="empty-state"><p>Nenhum membro ainda.</p></div>`;
+      return;
+    }
+
+    // Get today's date (ex: "2026-04-29")
+    const today = new Date().toISOString().split('T')[0];
+
+    // Build a map: memberId → payment status
+    const paymentMap = {};
+    payments.forEach(p => {
+      if (p.member_id) paymentMap[p.member_id] = p.status;
+    });
+
+    // Build a set of memberIds that already received a message today
+    const sentTodaySet = new Set();
+    logs.forEach(log => {
+      if (log.status === 'sent' && log.sent_at?.startsWith(today)) {
+        sentTodaySet.add(log.member_id);
+      }
+    });
+
+    const statusInfo = {
+      confirmed: { label: '✅ Pago',      cls: 'paid'     },
+      pending:   { label: '⏳ Pendente',  cls: 'pending'  },
+      rejected:  { label: '❌ Rejeitado', cls: 'rejected' },
+    };
+
+    container.innerHTML = members.map(member => {
+      const status = paymentMap[member.id];
+      const info   = statusInfo[status] || { label: '○ Aguardando', cls: 'none' };
+
+      // ── Decide the WhatsApp button state ──
+      let whatsappBtn = '';
+      if (status === 'confirmed') {
+        // Payment confirmed — no need to send link anymore
+        whatsappBtn = `<span style="font-size:12px; color:var(--success); font-weight:600;"> </span>`;
+      } else if (sentTodaySet.has(member.id)) {
+        // Already sent today — disable button
+        whatsappBtn = `
+          <button class="btn btn-secondary btn-sm" disabled
+            style="opacity:0.5; cursor:not-allowed;"
+            title="Mensagem já enviada hoje">
+            📱 Enviado hoje
+          </button>`;
+      } else {
+        // Not sent yet — show normal button
+        whatsappBtn = `
+          <button class="btn btn-secondary btn-sm btn-send-link"
+            title="Enviar link de pagamento"
+            onclick="sendLink('${member.id}', '${member.name}', this)">
+            📱 Link
+          </button>`;
+      }
+
+      return `
+        <div class="member-row">
+          <div class="member-top">
+            <div class="member-avatar">${member.name.charAt(0).toUpperCase()}</div>
+            <div class="member-identity">
+              <div class="member-name">${member.name}</div>
+              <div class="member-phone">📱 ${member.phone}</div>
+            </div>
+            <span class="member-status ${info.cls}">${info.label}</span>
+          </div>
+          <div class="member-bottom">
+            <span class="member-due">📅 ${formatDate(member.due_date)}</span>
+            <div class="member-value">${formatCurrency(member.individual_value)}</div>
+            <div class="member-actions">
+              ${whatsappBtn}
+              <button class="btn btn-danger btn-sm" onclick="deleteMember('${member.id}')">🗑️</button>
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+
+  } catch (e) {
+    console.error(e);
+    container.innerHTML = `<div class="empty-state"><p>Erro ao carregar membros.</p></div>`;
+  }
+}
+
+// ── Send payment link to one member ──
+async function sendLink(memberId, memberName, btn) {
+  if (!confirm(`Enviar link de pagamento para ${memberName} via WhatsApp?`)) return;
+
+  // Show loading state on button
+  if (btn) {
+    btn.textContent = 'Enviando...';
+    btn.disabled = true;
+  }
+
+  try {
+    const res = await fetch(`${API_URL}/whatsapp/send/${memberId}`, {
+      method: 'POST',
+      headers: authHeaders(),
+    });
+
+    const data = await res.json();
+
+    // If message was already sent today, inform the admin
+    if (data.already_sent) {
+      showToast('Mensagem já enviada hoje! Aguarde até amanhã.', 'info');
+      if (btn) btn.textContent = '📱 Enviado hoje';
+      return;
+    }
+
+    if (!res.ok) throw new Error(data.error || 'Erro ao enviar.');
+
+    showToast(`✅ Link enviado para ${memberName}!`, 'success');
+
+    // Reload members to update button states
+    loadMembers();
+
+  } catch (err) {
+    showToast(err.message || 'Erro ao enviar mensagens.', 'error');
+    if (btn) {
+      btn.textContent = '📱 Link';
+      btn.disabled = false;
+    }
+  }
+}
+
+  // ── Add member ──
+  async function addMember() {
+    const name  = document.getElementById('member-name').value.trim();
+    const phone = document.getElementById('member-phone').value.trim();
+    const value = parseFloat(document.getElementById('member-value').value) || 0;
+    const due   = document.getElementById('member-due').value;
+
+    if (!name || !phone) {
+      showToast('Nome e WhatsApp são obrigatórios.', 'error');
+      return;
+    }
+
+    const body = {
+      group_id: currentGroup.id,
+      name,
+      phone,
+      due_date: due || null,
+      individual_value: currentGroup.type === 2 ? value : 0,
+    };
+
+    try {
+      const res = await fetch(`${API_URL}/members`, {
+        method: 'POST',
+        headers: authHeaders(),
+        body: JSON.stringify(body),
+      });
+
+      if (!res.ok) throw new Error();
+
+      document.getElementById('member-name').value = '';
+      document.getElementById('member-phone').value = '';
+      document.getElementById('member-value').value = '';
+      document.getElementById('member-due').value = '';
+
+      showToast('Membro adicionado!', 'success');
+      loadMembers();
+    } catch {
+      showToast('Erro ao adicionar membro.', 'error');
+    }
+  }
+
+  // ── Delete member ──
+  async function deleteMember(id) {
+    if (!confirm('Remover este membro do grupo?')) return;
+
+    try {
+      const res = await fetch(`${API_URL}/members/${id}`, {
+        method: 'DELETE',
+        headers: authHeaders(),
+      });
+
+      if (!res.ok) throw new Error();
+      showToast('Membro removido!', 'success');
+      loadMembers();
+    } catch {
+      showToast('Erro ao remover membro.', 'error');
+    }
+  }
+
+  // ── Send payment links to all members of a group ──
+  async function sendToAll(groupId, groupName) {
+  if (!confirm(`Enviar link de pagamento para todos os membros do "${groupName}" via WhatsApp?`)) return;
+
+  try {
+    const res = await fetch(`${API_URL}/whatsapp/send-all/${groupId}`, {
+      method: 'POST',
+      headers: authHeaders(),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) throw new Error();
+
+    const sent   = data.results.filter(r => r.status === 'sent').length;
+    const failed = data.results.filter(r => r.status === 'failed').length;
+    const skipped = data.results.filter(r => r.status === 'skipped').length;
+
+    showToast(
+      `✅ ${sent} enviadas! ${failed > 0 ? `❌ ${failed} falharam.` : ''} ${skipped > 0 ? `⏭️ ${skipped} ignoradas (já enviado hoje ou pago).` : ''}`,
+      'success'
+    );
+
+    // Reload groups to reflect any changes
+    loadGroups();
+
+  } catch {
+    showToast('Erro ao enviar mensagens.', 'error');
+  }
+}
+</script>
+
+</body>
+</html>

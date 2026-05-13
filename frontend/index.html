@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Login — Sistema de Grupos</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    /* Login page specific styles */
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      background: var(--bg-primary);
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Decorative background circles */
+    body::before {
+      content: '';
+      position: absolute;
+      width: 500px; 
+      height: 500px;
+      background: radial-gradient(circle, rgba(34,211,238,0.1) 0%, transparent 70%);
+      top: -100px;
+      right: -100px;
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    body::after {
+      content: '';
+      position: absolute;
+      width: 400px;
+      height: 400px;
+      background: radial-gradient(circle, rgba(34,211,238,0.06) 0%, transparent 70%);
+      bottom: -100px;
+      left: -100px;
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    .login-box {
+      width: 100%;
+      max-width: 400px;
+      padding: 48px 40px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+      position: relative;
+      z-index: 1;
+      animation: fadeUp 0.4s ease;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .login-logo {
+      font-family: var(--font-display);
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      margin-bottom: 8px;
+    }
+
+    .login-logo span { color: var(--accent); }
+
+    .login-subtitle {
+      font-size: 14px;
+      color: var(--text-secondary);
+      margin-bottom: 36px;
+    }
+
+    .login-form {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .login-btn {
+      width: 100%;
+      padding: 13px;
+      justify-content: center;
+      font-size: 15px;
+      font-weight: 600;
+      margin-top: 8px;
+      border-radius: var(--radius-sm);
+    }
+
+    .error-msg {
+      background: var(--danger-soft);
+      color: var(--danger);
+      border: 1px solid rgba(239,68,68,0.2);
+      border-radius: var(--radius-sm);
+      padding: 10px 14px;
+      font-size: 13px;
+      display: none;
+    }
+
+    .error-msg.show { display: block; }
+
+    .mascote-container {
+      position: fixed;
+      left: 24px;
+      bottom: 24px;
+      z-index: 10;
+      display: flex;
+      align-items: flex-end;
+      gap: 16px;
+      pointer-events: none;
+    }
+
+    .mascote-bubble {
+      position: relative;
+      max-width: 240px;
+      padding: 14px 18px;
+      border-radius: 24px;
+      background: rgba(255, 255, 255, 0.95);
+      color: #1f1f2a;
+      font-size: 14px;
+      line-height: 1.5;
+      box-shadow: 0 14px 30px rgba(0, 0, 0, 0.16);
+      animation: bubbleFloat 3s ease-in-out infinite;
+    }
+
+    .mascote-bubble::after {
+      content: '';
+      position: absolute;
+      bottom: -10px;
+      left: 28px;
+      width: 18px;
+      height: 18px;
+      background: rgba(255, 255, 255, 0.95);
+      transform: rotate(45deg);
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+    }
+
+    .mascote {
+      width: 76px;
+      height: 76px;
+      border-radius: 50%;
+      background: radial-gradient(circle at top left, #22d3ee, #0ea5e9 70%);
+      position: relative;
+      box-shadow: 0 24px 40px rgba(0, 0, 0, 0.24);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+    }
+
+    .mascote::before {
+      content: '';
+      position: absolute;
+      width: 34px;
+      height: 26px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.18);
+      top: 14px;
+      left: 16px;
+    }
+
+    .mascote-eye {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #fff;
+      top: 26px;
+      box-shadow: inset 0 1px 0 rgba(0, 0, 0, 0.12);
+    }
+
+    .mascote-eye.left { left: 20px; }
+    .mascote-eye.right { right: 20px; }
+
+    .mascote-mouth {
+      position: absolute;
+      width: 24px;
+      height: 10px;
+      border-bottom: 3px solid #fff;
+      border-radius: 0 0 14px 14px;
+      bottom: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    @keyframes bubbleFloat {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-6px); }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="login-box">
+    <div class="login-logo">Split<span>Sync</span></div>
+    <p class="login-subtitle">Acesso restrito ao administrador</p>
+
+    <div class="login-form">
+      <div class="input-group">
+        <label for="email">E-mail</label>
+        <input type="email" id="email" placeholder="admin@tcc.com" />
+      </div>
+
+      <div class="input-group">
+        <label for="password">Senha</label>
+        <input type="password" id="password" placeholder="••••••••" />
+      </div>
+
+      <div class="error-msg" id="error-msg">
+        E-mail ou senha incorretos.
+      </div>
+
+      <button class="btn btn-primary login-btn" id="login-btn" onclick="handleLogin()">
+        Entrar
+      </button>
+    </div>
+  </div>
+
+  <div class="mascote-container">
+    <div class="mascote-bubble" id="mascote-bubble">Bem-vindo ao SplitSync! Pronto para organizar seus grupos?</div>
+    <div class="mascote">
+      <div class="mascote-eye left"></div>
+      <div class="mascote-eye right"></div>
+      <div class="mascote-mouth"></div>
+    </div>
+  </div>
+
+  <script src="js/auth.js"></script>
+  <script>
+    const mascoteMessages = [
+      'Bem-vindo ao SplitSync! Pronto para organizar seus grupos?',
+      'Sou o Splity, seu ajudante de controle de pagamentos! ',
+      'Vamos conferir se o administrador está logado?',
+    ];
+    let mascoteIndex = 0;
+    const mascoteBubble = document.getElementById('mascote-bubble');
+
+    function atualizarMascote() {
+      mascoteBubble.textContent = mascoteMessages[mascoteIndex];
+      mascoteIndex = (mascoteIndex + 1) % mascoteMessages.length;
+    }
+
+    setTimeout(atualizarMascote, 2500);
+    setInterval(atualizarMascote, 6000);
+
+    // If already logged in, redirect to dashboard
+    if (getToken()) {
+      window.location.href = 'dashboard.html';
+    }
+
+    // Handle login form submission
+    async function handleLogin() {
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      const btn = document.getElementById('login-btn');
+      const errorMsg = document.getElementById('error-msg');
+
+      // Basic validation
+      if (!email || !password) {
+        errorMsg.textContent = 'Preencha todos os campos.';
+        errorMsg.classList.add('show');
+        return;
+      }
+
+      // Show loading state on button
+      btn.textContent = 'Entrando...';
+      btn.disabled = true;
+      errorMsg.classList.remove('show');
+
+      try {
+        const response = await fetch(`${API_URL}/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Erro ao fazer login.');
+        }
+
+        // Save token and redirect to dashboard
+        saveToken(data.token);
+        window.location.href = 'dashboard.html';
+
+      } catch (err) {
+        errorMsg.textContent = err.message;
+        errorMsg.classList.add('show');
+        btn.textContent = 'Entrar';
+        btn.disabled = false;
+      }
+    }
+
+    // Allow pressing Enter to login
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') handleLogin();
+    });
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Pagamento — SplitSync</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      background: var(--bg-primary);
+      padding: 20px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: absolute;
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, rgba(108,99,255,0.07) 0%, transparent 70%);
+      top: -100px; right: -100px;
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    .payment-box {
+      width: 100%;
+      max-width: 460px;
+      position: relative;
+      z-index: 1;
+      animation: fadeUp 0.4s ease;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .payment-logo {
+      font-family: var(--font-display);
+      font-size: 22px;
+      font-weight: 800;
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    .payment-logo span { color: var(--accent); }
+
+    .info-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      margin-bottom: 16px;
+    }
+
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 14px;
+    }
+
+    .info-row:last-child { border-bottom: none; }
+    .info-row-label { color: var(--text-secondary); }
+    .info-row-value { font-weight: 600; }
+
+    .value-highlight {
+      font-family: var(--font-display);
+      font-size: 36px;
+      font-weight: 800;
+      color: var(--accent);
+      text-align: center;
+      margin: 20px 0;
+      letter-spacing: -0.03em;
+    }
+
+    .qr-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 32px 24px;
+      text-align: center;
+      margin-bottom: 16px;
+    }
+
+    .qr-title { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+    .qr-subtitle { font-size: 13px; color: var(--text-secondary); margin-bottom: 24px; }
+
+    .qr-wrapper {
+      display: inline-block;
+      padding: 16px;
+      background: white;
+      border-radius: var(--radius-sm);
+      margin-bottom: 24px;
+    }
+
+    .timer-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+
+    .timer-ring {
+      position: relative;
+      width: 72px;
+      height: 72px;
+    }
+
+    .timer-ring svg { transform: rotate(-90deg); }
+    .timer-ring circle { fill: none; stroke-width: 5; }
+    .timer-ring .bg { stroke: var(--border); }
+    .timer-ring .progress {
+      stroke: var(--accent);
+      stroke-linecap: round;
+      stroke-dasharray: 188;
+      stroke-dashoffset: 0;
+      transition: stroke-dashoffset 1s linear;
+    }
+
+    .timer-number {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-family: var(--font-display);
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--accent);
+    }
+
+    .timer-label { font-size: 13px; color: var(--text-secondary); }
+
+    .processing-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 48px 24px;
+      text-align: center;
+      margin-bottom: 16px;
+    }
+
+    .processing-icon {
+      font-size: 52px;
+      margin-bottom: 16px;
+      animation: pulse 0.8s ease infinite alternate;
+    }
+
+    @keyframes pulse {
+      from { transform: scale(1); }
+      to   { transform: scale(1.1); }
+    }
+
+    .processing-title { font-size: 18px; font-weight: 700; color: var(--success); margin-bottom: 8px; }
+    .processing-sub { font-size: 14px; color: var(--text-secondary); }
+
+    .upload-area {
+      border: 2px dashed var(--border);
+      border-radius: var(--radius-sm);
+      padding: 32px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      background: var(--bg-secondary);
+    }
+
+    .upload-area:hover { border-color: var(--accent); background: var(--accent-soft); }
+    .upload-area input { display: none; }
+    .upload-icon { font-size: 36px; margin-bottom: 10px; }
+    .upload-text { font-size: 14px; color: var(--text-secondary); }
+    .upload-hint { font-size: 12px; color: var(--text-muted); margin-top: 6px; }
+    .upload-filename { font-size: 13px; color: var(--success); margin-top: 10px; font-weight: 500; }
+
+    .submit-btn {
+      width: 100%;
+      justify-content: center;
+      padding: 14px;
+      font-size: 15px;
+      font-weight: 600;
+      margin-top: 16px;
+      border-radius: var(--radius-sm);
+    }
+
+    .pay-btn {
+      width: 100%;
+      justify-content: center;
+      padding: 14px;
+      font-size: 15px;
+      font-weight: 600;
+      border-radius: var(--radius-sm);
+    }
+
+    .success-card {
+      background: var(--bg-card);
+      border: 1px solid rgba(34,197,94,0.2);
+      border-radius: var(--radius);
+      padding: 40px 24px;
+      text-align: center;
+      margin-bottom: 16px;
+    }
+
+    .success-icon { font-size: 64px; margin-bottom: 16px; }
+    .success-title { font-size: 22px; font-weight: 800; margin-bottom: 8px; }
+    .success-sub { font-size: 14px; color: var(--text-secondary); }
+
+    .status-banner {
+      padding: 14px 20px;
+      border-radius: var(--radius-sm);
+      font-size: 14px;
+      font-weight: 500;
+      text-align: center;
+      margin-bottom: 16px;
+    }
+
+    .status-confirmed { background: var(--success-soft); color: var(--success); border: 1px solid rgba(34,197,94,0.2); }
+    .status-pending   { background: var(--warning-soft); color: var(--warning); border: 1px solid rgba(245,158,11,0.2); }
+    .status-rejected  { background: var(--danger-soft);  color: var(--danger);  border: 1px solid rgba(239,68,68,0.2); }
+  </style>
+</head>
+<body>
+
+<div class="payment-box">
+
+  <div class="payment-logo">Split<span>Sync</span></div>
+
+  <!-- STEP 1: Loading -->
+  <div id="step-loading" class="info-card" style="text-align:center;">
+    <div class="loading" style="justify-content:center;">
+      <div class="spinner"></div> Carregando informações...
+    </div>
+  </div>
+
+  <!-- STEP 2: Info + Pay button -->
+  <div id="step-info" style="display:none;">
+    <div id="status-banner" style="display:none;"></div>
+    <div class="info-card">
+      <div class="info-row">
+        <span class="info-row-label">Nome</span>
+        <span class="info-row-value" id="member-name">—</span>
+      </div>
+      <div class="info-row">
+        <span class="info-row-label">Grupo</span>
+        <span class="info-row-value" id="group-name">—</span>
+      </div>
+      <div class="info-row">
+        <span class="info-row-label">Vencimento</span>
+        <span class="info-row-value" id="due-date">—</span>
+      </div>
+    </div>
+    <div class="value-highlight" id="payment-value">R$ —</div>
+    <button class="btn btn-primary pay-btn" onclick="startPayment()">
+      💳 Pagar agora
+    </button>
+  </div>
+
+  <!-- STEP 3: QR Code + Timer -->
+  <div id="step-qr" style="display:none;">
+    <div class="qr-card">
+      <div class="qr-title">Escaneie o QR Code</div>
+      <div class="qr-subtitle">Use o app do seu banco para pagar via Pix</div>
+      <div class="qr-wrapper">
+        <div id="qr-canvas"></div>
+      </div>
+      <div class="timer-wrapper">
+        <div class="timer-ring">
+          <svg width="72" height="72" viewBox="0 0 72 72">
+            <circle class="bg" cx="36" cy="36" r="30"/>
+            <circle class="progress" id="timer-circle" cx="36" cy="36" r="30"/>
+          </svg>
+          <div class="timer-number" id="timer-number">3</div>
+        </div>
+        <div class="timer-label">Aguardando pagamento...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 4: Processing -->
+  <div id="step-processing" style="display:none;">
+    <div class="processing-card">
+      <div class="processing-icon">✅</div>
+      <div class="processing-title">Pagamento processado!</div>
+      <div class="processing-sub">Agora envie o comprovante para confirmar.</div>
+    </div>
+  </div>
+
+  <!-- STEP 5: Upload -->
+  <div id="step-upload" style="display:none;">
+    <div class="info-card">
+      <div style="font-size:13px; font-weight:600; color:var(--text-secondary); margin-bottom:14px; text-transform:uppercase; letter-spacing:0.05em;">
+        Enviar Comprovante
+      </div>
+      <div class="upload-area" onclick="document.getElementById('receipt-file').click()">
+        <div class="upload-icon">📎</div>
+        <div class="upload-text">Clique para selecionar o comprovante</div>
+        <div class="upload-hint">Imagem ou PDF — máx. 5MB</div>
+        <input type="file" id="receipt-file" accept=".pdf,.jpg,.jpeg,.png" onchange="previewReceipt(this)" />
+        <div class="upload-filename" id="receipt-filename"></div>
+      </div>
+      <button class="btn btn-primary submit-btn" onclick="submitReceipt()" id="submit-btn">
+        📤 Enviar Comprovante
+      </button>
+    </div>
+  </div>
+
+  <!-- STEP 6: Success -->
+  <div id="step-success" style="display:none;">
+    <div class="success-card">
+      <div class="success-icon">🎉</div>
+      <div class="success-title">Comprovante enviado!</div>
+      <div class="success-sub">Aguarde a confirmação do administrador.<br>Você receberá a nota fiscal em breve.</div>
+    </div>
+  </div>
+
+  <!-- Error -->
+  <div id="step-error" style="display:none;">
+    <div class="info-card" style="text-align:center; padding:40px;">
+      <div style="font-size:48px; margin-bottom:16px;">😕</div>
+      <div style="font-size:16px; font-weight:700; margin-bottom:8px;">Link inválido</div>
+      <div style="font-size:14px; color:var(--text-secondary);">Este link de pagamento não existe ou expirou.</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- QR Code library -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="js/auth.js"></script>
+<script>
+  const urlParams = new URLSearchParams(window.location.search);
+  const token = urlParams.get('token');
+  let memberData = null;
+
+  // ── Show only the specified step ──
+  function showStep(stepId) {
+    ['step-loading','step-info','step-qr','step-processing','step-upload','step-success','step-error']
+      .forEach(id => document.getElementById(id).style.display = id === stepId ? 'block' : 'none');
+  }
+
+  // ── Load payment info by token ──
+  document.addEventListener('DOMContentLoaded', async () => {
+    if (!token) { showStep('step-error'); return; }
+
+    try {
+      const res  = await fetch(`${API_URL}/payments/pay/${token}`);
+      const data = await res.json();
+
+      if (!res.ok) { showStep('step-error'); return; }
+
+      memberData = data.member;
+
+      // Fill member info
+      document.getElementById('member-name').textContent   = data.member.name;
+      document.getElementById('group-name').textContent    = data.member.group_name;
+      document.getElementById('due-date').textContent      = formatDate(data.member.due_date);
+      document.getElementById('payment-value').textContent = formatCurrency(data.member.individual_value);
+
+      // Handle existing payment status
+      if (data.payment) {
+        showStatusBanner(data.payment.status);
+        if (data.payment.status === 'confirmed') { showStep('step-success'); return; }
+      }
+
+      showStep('step-info');
+
+    } catch { showStep('step-error'); }
+  });
+
+  // ── Show status banner ──
+  function showStatusBanner(status) {
+    const banner = document.getElementById('status-banner');
+    const messages = {
+      pending:   '⏳ Comprovante enviado — aguardando confirmação.',
+      confirmed: '✅ Pagamento confirmado! Obrigado.',
+      rejected:  '❌ Comprovante rejeitado. Por favor, envie novamente.',
+    };
+    banner.className = `status-banner status-${status}`;
+    banner.textContent = messages[status] || '';
+    banner.style.display = 'block';
+  }
+
+  // ── Start payment: show QR + timer ──
+function startPayment() {
+  // Clear the QR code canvas before generating a new one
+  document.getElementById('qr-canvas').innerHTML = '';
+  showStep('step-qr');
+  generateQRCode();
+  startTimer();
+}
+
+ // ── Generate QR Code ──
+function generateQRCode() {
+  // Clear any existing QR code first
+  const canvas = document.getElementById('qr-canvas');
+  canvas.innerHTML = '';
+
+  const pixPayload = `PIX|${token.substring(0, 16)}|${memberData.individual_value}`;
+
+  new QRCode(canvas, {
+    text: pixPayload,
+    width: 200,
+    height: 200,
+    colorDark: '#000000',
+    colorLight: '#ffffff',
+    correctLevel: QRCode.CorrectLevel.M,
+  });
+}
+
+  // ── Countdown timer ──
+  function startTimer() {
+    const circle = document.getElementById('timer-circle');
+    const number = document.getElementById('timer-number');
+    const circumference = 188;
+    let seconds = 3;
+
+    circle.style.strokeDashoffset = '0';
+    number.textContent = seconds;
+
+    const interval = setInterval(() => {
+      seconds--;
+      number.textContent = seconds;
+      circle.style.strokeDashoffset = circumference * (1 - seconds / 3);
+
+      if (seconds <= 0) {
+        clearInterval(interval);
+        showStep('step-processing');
+        setTimeout(() => showStep('step-upload'), 1500);
+      }
+    }, 1000);
+  }
+
+  // ── Preview receipt filename ──
+  function previewReceipt(input) {
+    const filename = input.files[0]?.name || '';
+    document.getElementById('receipt-filename').textContent = filename ? `✅ ${filename}` : '';
+  }
+
+  // ── Submit receipt ──
+async function submitReceipt() {
+  const fileInput = document.getElementById('receipt-file');
+  const file = fileInput.files[0];
+  const btn = document.getElementById('submit-btn');
+
+  // Log to check if token is still available
+  console.log('Token at submit:', token);
+  console.log('File:', file);
+
+  if (!file) { alert('Selecione o comprovante antes de enviar.'); return; }
+
+  btn.textContent = 'Enviando...';
+  btn.disabled = true;
+
+  const formData = new FormData();
+  formData.append('receipt', file);
+
+  try {
+    const url = `${API_URL}/payments/pay/${token}`;
+    console.log('Sending to URL:', url);
+
+    const res = await fetch(url, {
+      method: 'POST',
+      body: formData,
+    });
+
+    console.log('Response status:', res.status);
+    const data = await res.json();
+    console.log('Response data:', data);
+
+    if (!res.ok) throw new Error(data.error || 'Erro desconhecido');
+    showStep('step-success');
+
+  } catch (err) {
+    console.log('Error:', err.message);
+    alert('Erro ao enviar comprovante: ' + err.message);
+    btn.textContent = '📤 Enviar Comprovante';
+    btn.disabled = false;
+  }
+}
+
+</script>
+
+</body>
+</html>
