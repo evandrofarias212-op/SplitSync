@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Cadastro — SplitSync</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      background: var(--bg-primary);
+      position: relative;
+      overflow: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: absolute;
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, rgba(108,99,255,0.08) 0%, transparent 70%);
+      top: -100px;
+      right: -100px;
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    body::after {
+      content: '';
+      position: absolute;
+      width: 400px;
+      height: 400px;
+      background: radial-gradient(circle, rgba(108,99,255,0.05) 0%, transparent 70%);
+      bottom: -100px;
+      left: -100px;
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    .register-box {
+      width: 100%;
+      max-width: 400px;
+      padding: 48px 40px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+      position: relative;
+      z-index: 1;
+      animation: fadeUp 0.4s ease;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .register-logo {
+      font-family: var(--font-display);
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      margin-bottom: 8px;
+    }
+
+    .register-logo span { color: var(--accent); }
+
+    .register-subtitle {
+      font-size: 14px;
+      color: var(--text-secondary);
+      margin-bottom: 36px;
+    }
+
+    .register-form {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .register-btn {
+      width: 100%;
+      padding: 13px;
+      justify-content: center;
+      font-size: 15px;
+      font-weight: 600;
+      margin-top: 8px;
+      border-radius: var(--radius-sm);
+    }
+
+    .error-msg {
+      background: var(--danger-soft);
+      color: var(--danger);
+      border: 1px solid rgba(239,68,68,0.2);
+      border-radius: var(--radius-sm);
+      padding: 10px 14px;
+      font-size: 13px;
+      display: none;
+    }
+
+    .error-msg.show { display: block; }
+
+    .success-msg {
+      background: var(--success-soft);
+      color: var(--success);
+      border: 1px solid rgba(34,197,94,0.2);
+      border-radius: var(--radius-sm);
+      padding: 10px 14px;
+      font-size: 13px;
+      display: none;
+    }
+
+    .success-msg.show { display: block; }
+
+    .login-link {
+      text-align: center;
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-top: 20px;
+    }
+
+    .login-link a {
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    .login-link a:hover { text-decoration: underline; }
+
+    .password-strength {
+      height: 4px;
+      border-radius: 2px;
+      background: var(--border);
+      margin-top: 6px;
+      overflow: hidden;
+    }
+
+    .password-strength-bar {
+      height: 100%;
+      border-radius: 2px;
+      width: 0%;
+      transition: all 0.3s ease;
+    }
+
+    .strength-weak   { width: 33%; background: var(--danger); }
+    .strength-medium { width: 66%; background: var(--warning); }
+    .strength-strong { width: 100%; background: var(--success); }
+  </style>
+</head>
+<body>
+
+  <div class="register-box">
+    <div class="register-logo">Split<span>Sync</span></div>
+    <p class="register-subtitle">Crie sua conta gratuitamente</p>
+
+    <div class="register-form">
+      <div class="input-group">
+        <label for="name">Nome completo</label>
+        <input type="text" id="name" placeholder="Seu nome" />
+      </div>
+
+      <div class="input-group">
+        <label for="email">E-mail</label>
+        <input type="email" id="email" placeholder="seu@email.com" />
+      </div>
+
+      <div class="input-group">
+        <label for="password">Senha</label>
+        <input type="password" id="password" placeholder="Mínimo 6 caracteres"
+          oninput="checkPasswordStrength(this.value)" />
+        <div class="password-strength">
+          <div class="password-strength-bar" id="strength-bar"></div>
+        </div>
+      </div>
+
+      <div class="input-group">
+        <label for="confirm-password">Confirmar senha</label>
+        <input type="password" id="confirm-password" placeholder="Repita a senha" />
+      </div>
+
+      <div class="error-msg"   id="error-msg"></div>
+      <div class="success-msg" id="success-msg"></div>
+
+      <button class="btn btn-primary register-btn" id="register-btn" onclick="handleRegister()">
+        Criar conta
+      </button>
+    </div>
+
+    <div class="login-link">
+      Já tem uma conta? <a href="index.html">Fazer login</a>
+    </div>
+  </div>
+
+  <script src="js/auth.js"></script>
+  <script>
+    // If already logged in, redirect to dashboard
+    if (getToken()) {
+      window.location.href = 'dashboard.html';
+    }
+
+    // ── Check password strength ──
+    function checkPasswordStrength(password) {
+      const bar = document.getElementById('strength-bar');
+      bar.className = 'password-strength-bar';
+
+      if (password.length === 0) {
+        bar.style.width = '0%';
+        return;
+      }
+
+      // Check strength based on length and character variety
+      const hasUpper   = /[A-Z]/.test(password);
+      const hasNumber  = /[0-9]/.test(password);
+      const hasSpecial = /[^A-Za-z0-9]/.test(password);
+      const score = (password.length >= 8 ? 1 : 0) + (hasUpper ? 1 : 0) +
+                    (hasNumber ? 1 : 0) + (hasSpecial ? 1 : 0);
+
+      if (score <= 1)      bar.classList.add('strength-weak');
+      else if (score <= 3) bar.classList.add('strength-medium');
+      else                 bar.classList.add('strength-strong');
+    }
+
+    // ── Handle register form submission ──
+    async function handleRegister() {
+      const name            = document.getElementById('name').value.trim();
+      const email           = document.getElementById('email').value.trim();
+      const password        = document.getElementById('password').value;
+      const confirmPassword = document.getElementById('confirm-password').value;
+      const btn             = document.getElementById('register-btn');
+      const errorMsg        = document.getElementById('error-msg');
+      const successMsg      = document.getElementById('success-msg');
+
+      // Hide previous messages
+      errorMsg.classList.remove('show');
+      successMsg.classList.remove('show');
+
+      // Validate fields
+      if (!name || !email || !password || !confirmPassword) {
+        errorMsg.textContent = 'Preencha todos os campos.';
+        errorMsg.classList.add('show');
+        return;
+      }
+
+      if (password.length < 6) {
+        errorMsg.textContent = 'A senha deve ter pelo menos 6 caracteres.';
+        errorMsg.classList.add('show');
+        return;
+      }
+
+      if (password !== confirmPassword) {
+        errorMsg.textContent = 'As senhas não coincidem.';
+        errorMsg.classList.add('show');
+        return;
+      }
+
+      // Show loading state
+      btn.textContent = 'Criando conta...';
+      btn.disabled = true;
+
+      try {
+        const response = await fetch(`${API_URL}/auth/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, email, password }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Erro ao criar conta.');
+        }
+
+        // Show success message and redirect to login
+        successMsg.textContent = 'Conta criada com sucesso! Redirecionando para o login...';
+        successMsg.classList.add('show');
+
+        setTimeout(() => {
+          window.location.href = 'index.html';
+        }, 2000);
+
+      } catch (err) {
+        errorMsg.textContent = err.message;
+        errorMsg.classList.add('show');
+        btn.textContent = 'Criar conta';
+        btn.disabled = false;
+      }
+    }
+
+    // Allow pressing Enter to register
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') handleRegister();
+    });
+  </script>
+
+</body>
+</html>
