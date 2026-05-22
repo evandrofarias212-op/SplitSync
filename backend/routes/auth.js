@@ -9,10 +9,13 @@ const express = require('express');
 const router = express.Router();
 
 // Import the auth controller functions
-const { login, logout } = require('../controllers/authController');
+const { login, logout, register } = require('../controllers/authController');
 
 // Import the middleware to protect the logout route
 const authMiddleware = require('../middlewares/authMiddleware');
+
+// POST /api/auth/register → creates a new account
+router.post('/register', register);
 
 // POST /api/auth/login → calls the login function
 router.post('/login', login);
